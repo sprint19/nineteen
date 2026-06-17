@@ -228,18 +228,25 @@ body.locked { overflow: hidden; height: 100vh; }
   perspective: 380px;
   overflow: hidden;
 }
+/* fixed-size tilted plane — pivot is the viewport floor, independent of how
+   tall the crawl content is */
+.crawl-stage {
+  position: absolute; inset: 0;
+  transform: rotateX(26deg);
+  transform-origin: 50% 100%;
+}
 .crawl-text {
   position: absolute; top: 0; left: 50%;
   width: min(92%, 720px);
-  transform-origin: 50% 100%;
-  transform: translateX(-50%) rotateX(26deg);
+  transform-origin: 50% 0;
+  transform: translateX(-50%);
   color: var(--gold);
   font-family: var(--crt);
   font-size: clamp(22px, 4.6vw, 34px);
   line-height: 1.55;
   text-align: justify;
   text-shadow: 0 0 16px rgba(232,178,31,.35);
-  will-change: top, transform;
+  will-change: transform;
 }
 .crawl-title {
   text-align: center; margin-bottom: 60px;

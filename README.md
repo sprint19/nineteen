@@ -11,10 +11,14 @@ developer archive. A deliberately over-long brand relic, not a sales page.
 A single static page (no build step). Three phases:
 
 1. **Boot** — fake terminal warning + `Begin the Scroll` / `Escape to sprint19.com`.
-2. **Crawl** — Star Wars-style perspective crawl, with controls: AUTO/MANUAL
-   toggle (mouse wheel + ↑/↓/PageUp/PageDown/space), auto-scroll speed slider,
-   zoom −/+ and **FIT** (fit-to-width: scales the crawl so the column fills the
-   screen width, keeps auto-scrolling), and `esc` to skip. A little 8-bit hard-hat worker
+2. **Crawl** — Star Wars-style perspective crawl of the **entire document**
+   (preface → chapters I–XIX → exit door → footer), running continuously and
+   settling on the footer at the end. The tilt is on a fixed-size stage so the
+   crawl stays undistorted no matter how tall the content is. Controls:
+   AUTO/MANUAL toggle (mouse wheel + ↑/↓/PageUp/PageDown/space), auto-scroll
+   speed slider, zoom −/+ and **FIT** (fit-to-width: scales the crawl so the
+   column fills the screen width, keeps auto-scrolling), and `esc` to skip. A
+   little 8-bit hard-hat worker
    (plus a second one) marches a crate toward a "probably fine" flag at the
    top — ambient flavor.
    The crawl is reusable: from the archive, the **⤒ crawl** button in the

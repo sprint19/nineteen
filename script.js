@@ -152,21 +152,23 @@
   const speedGroup = document.getElementById("cc-speed-group");
 
   const TILT = 26;          // degrees of perspective tilt
-  const BASE_SPEED = 42;    // px/sec at 1.0x
+  const BASE_SPEED = 75;    // px/sec at 1.0x
   const cr = { active:false, mode:"auto", pos:0, start:0, end:0,
-               zoom:1, speedMul:1, raf:0, last:0 };
+               zoom:1, speedMul:1, raf:0, last:0, restAtEnd:false };
 
   function crawlApply() {
     if (!crawlText) return;
-    crawlText.style.top = cr.pos + "px";
+    // tilt lives on .crawl-stage; the text only scrolls (translateY) and zooms
     crawlText.style.transform =
-      "translateX(-50%) rotateX(" + TILT + "deg) scale(" + cr.zoom + ")";
+      "translateX(-50%) translateY(" + cr.pos + "px) scale(" + cr.zoom + ")";
   }
   function crawlMeasure() {
     const H = window.innerHeight;
-    cr.start = H * 0.96;
-    const T = crawlText ? crawlText.offsetHeight * cr.zoom : H;
-    cr.end = -(T + H * 0.15);
+    const Th = (crawlText ? crawlText.offsetHeight : H) * cr.zoom;
+    cr.start = H * 0.98;
+    // restAtEnd: settle with the footer resting near the viewport floor;
+    // otherwise keep going until the content has scrolled fully off the top
+    cr.end = cr.restAtEnd ? (H * 0.85) - Th : -(Th + H * 0.1);
   }
   function crawlClamp() {
     cr.pos = Math.min(cr.start + 200, Math.max(cr.end - 120, cr.pos));
@@ -184,8 +186,12 @@
     const dt = Math.min(0.05, (ts - cr.last) / 1000); cr.last = ts;
     if (cr.mode === "auto") {
       cr.pos -= BASE_SPEED * cr.speedMul * dt;
-      if (cr.pos <= cr.end) { enterArchive(); return; }
-      crawlApply();
+      if (cr.pos <= cr.end) {
+        if (cr.restAtEnd) { cr.pos = cr.end; crawlApply(); setMode("manual"); }
+        else { enterArchive(); return; }
+      } else {
+        crawlApply();
+      }
     }
     cr.raf = requestAnimationFrame(crawlFrame);
   }
@@ -225,10 +231,29 @@
     : [];
   let crawlReturnId = null;   // archive anchor to land on when the crawl ends
 
+  function cloneNoId(node) {
+    const c = node.cloneNode(true);          // strip ids so the crawl copy
+    if (c.removeAttribute) c.removeAttribute("id");   // never duplicates archive ids
+    if (c.querySelectorAll) {
+      c.querySelectorAll("[id]").forEach(function (e) { e.removeAttribute("id"); });
+    }
+    return c;
+  }
   function setCrawlIntro() {
     if (!crawlText) return;
     crawlText.replaceChildren();
     introNodes.forEach(function (n) { crawlText.appendChild(n.cloneNode(true)); });
+  }
+  function setCrawlFull() {
+    // the entire document — preface, chapters I–XIX, exit door and footer —
+    // as one continuous crawl
+    if (!crawlText) return;
+    const body = document.querySelector(".archive-body");
+    if (!body) { setCrawlIntro(); return; }
+    crawlText.replaceChildren();
+    Array.from(body.children).forEach(function (node) {
+      crawlText.appendChild(cloneNoId(node));
+    });
   }
   function setCrawlChapter(h2) {
     if (!crawlText) return;
@@ -250,7 +275,7 @@
     let node = h2.nextElementSibling;
     while (node && !node.matches("h2.chapter") && node.id !== "exit" &&
            node.tagName !== "FOOTER") {
-      if (node.matches("p, ul, h3")) crawlText.appendChild(node.cloneNode(true));
+      if (node.matches("p, ul, h3")) crawlText.appendChild(cloneNoId(node));
       node = node.nextElementSibling;
     }
   }
@@ -276,7 +301,8 @@
   function beginScroll() {
     track("begin_scroll");
     if (musicAllowed) playMusic();          // user gesture → playback allowed
-    setCrawlIntro();
+    setCrawlFull();                          // full document, continuous crawl
+    cr.restAtEnd = true;                     // settle on the footer at the end
     crawlReturnId = null;
     hide(boot);
     show(crawl);
@@ -287,6 +313,7 @@
   function replayChapterAsCrawl() {
     const ch = getCurrentChapter();
     if (!ch) return;
+    cr.restAtEnd = false;                    // single chapter → return to the archive
     if (ch.classList.contains("doc-head")) { setCrawlIntro(); crawlReturnId = "doc-top"; }
     else { setCrawlChapter(ch); crawlReturnId = ch.id; }
     track("replay_crawl", { chapter: ch.getAttribute("data-num") || "00" });
