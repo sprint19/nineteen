@@ -305,7 +305,7 @@ input[type="range"].cc-range::-moz-range-thumb {
 
 /* ---- 8-bit delivery scene ---- */
 .crawl-scene {
-  position: absolute; top: 14px; left: 0; right: 0; height: 64px;
+  position: absolute; top: 14px; left: 0; right: 0; height: 78px;
   z-index: 4; pointer-events: none; overflow: hidden;
 }
 .flag {
