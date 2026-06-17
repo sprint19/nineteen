@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2">
 
   <!-- ============================================================
        Google Analytics 4  (lightweight — no ad pixels)
@@ -212,7 +212,12 @@
         <button class="cc-btn" id="cc-zoom-in" type="button" aria-label="Zoom in">+</button>
         <button class="cc-btn" id="cc-fit" type="button">FIT</button>
       </div>
-      <span class="cc-hint">scroll or &uarr;&darr; to read &middot; space pauses &middot; +/&minus; zoom &middot; esc skips</span>
+      <div class="cc-group">
+        <span class="cc-label">CHAPTER</span>
+        <button class="cc-btn" id="cc-prev" type="button" aria-label="Previous chapter">&#9664; prev</button>
+        <button class="cc-btn" id="cc-next" type="button" aria-label="Next chapter">next &#9654;</button>
+      </div>
+      <span class="cc-hint">scroll or &uarr;&darr; to read &middot; space pauses &middot; +/&minus; zoom &middot; [ ] chapters &middot; esc skips</span>
     </div>
 
     <div class="crawl-skip">
@@ -1297,6 +1302,6 @@
     <button class="midi-float" data-midi-btn data-play="▶ forbidden MIDI" data-pause="❚❚ forbidden MIDI"><span data-label>▶ forbidden MIDI</span></button>
   </section>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>

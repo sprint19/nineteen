@@ -17,13 +17,17 @@ A single static page (no build step). Three phases:
    crawl stays undistorted no matter how tall the content is. Controls:
    AUTO/MANUAL toggle (mouse wheel + ↑/↓/PageUp/PageDown/space), auto-scroll
    speed slider, zoom −/+ and **FIT** (fit-to-width: scales the crawl so the
-   column fills the screen width, keeps auto-scrolling), and `esc` to skip. A
-   little 8-bit hard-hat worker
-   (plus a second one) marches a crate toward a "probably fine" flag at the
-   top — ambient flavor.
+   column fills the screen width, keeps auto-scrolling), **CHAPTER ◀ prev /
+   next ▶** (also `[` and `]`) that jump to chapter anchors, and `esc` to skip.
+   A little 8-bit hard-hat worker (plus a second one) marches a crate toward a
+   "probably fine" flag at the top — ambient flavor.
    The crawl is reusable: from the archive, the **⤒ crawl** button in the
-   status bar replays the chapter you're currently reading as a crawl, and
-   returns you to the start of that same chapter when you exit.
+   status bar opens the full crawl positioned at the chapter you're reading —
+   you can keep scrolling (or prev/next) into any other chapter, and on exit it
+   drops you back into the archive at whichever chapter you were viewing.
+
+Asset references in `index.html` carry a `?v=N` query for cache-busting; bump it
+when you change `script.js`/`styles.css` so returning visitors get the update.
 3. **Archive** — the full ~6,000-word lore document with chapter nav, scroll
    progress, rotating nonsense status, and the exit door back to sprint19.com.
 

@@ -154,7 +154,7 @@
   const TILT = 26;          // degrees of perspective tilt
   const BASE_SPEED = 75;    // px/sec at 1.0x
   const cr = { active:false, mode:"auto", pos:0, start:0, end:0,
-               zoom:1, speedMul:1, raf:0, last:0, restAtEnd:false };
+               zoom:1, speedMul:1, raf:0, last:0, restAtEnd:false, pendingChapter:null };
 
   function crawlApply() {
     if (!crawlText) return;
@@ -202,6 +202,11 @@
     crawlMeasure(); cr.pos = cr.start; crawlApply(); updateModeBtn();
     if (speedInput) speedInput.value = "1";
     if (speedVal) speedVal.textContent = "1.0×";
+    if (cr.pendingChapter != null) {          // start positioned at a chapter
+      const el = findCrawlChapter(cr.pendingChapter);
+      cr.pendingChapter = null;
+      if (el) crawlScrollToChapter(el);
+    }
     cancelAnimationFrame(cr.raf);
     cr.raf = requestAnimationFrame(crawlFrame);
   }
@@ -223,6 +228,45 @@
   function manualScroll(delta) {
     setMode("manual");
     cr.pos -= delta; crawlClamp(); crawlApply();
+  }
+
+  /* ---- chapter navigation within the crawl ---- */
+  function crawlChapterEls() {
+    // every chapter anchor in the crawl: doc-head (00) + h2.chapter clones
+    return crawlText ? Array.from(crawlText.querySelectorAll("[data-num]")) : [];
+  }
+  function findCrawlChapter(num) {
+    return crawlText ? crawlText.querySelector('[data-num="' + num + '"]') : null;
+  }
+  // a heading's position on the tilted stage is pos + its offsetTop*zoom;
+  // READ_LINE is where we want a chapter to sit when navigated to (near field)
+  const READ_LINE = 0.78;
+  function crawlScrollToChapter(el) {
+    if (!el) return;
+    crawlMeasure();   // refresh bounds against the current (full) content height
+    cr.pos = window.innerHeight * READ_LINE - el.offsetTop * cr.zoom;
+    crawlClamp(); crawlApply();
+  }
+  function crawlCurrentIndex() {
+    const els = crawlChapterEls();
+    const line = window.innerHeight * READ_LINE + 2;   // +2px absorbs float error
+    let idx = 0;
+    els.forEach(function (el, i) {
+      if (cr.pos + el.offsetTop * cr.zoom <= line) idx = i;   // risen to/above the line
+    });
+    return idx;
+  }
+  function crawlGoTo(i) {
+    const els = crawlChapterEls();
+    if (!els.length) return;
+    i = Math.max(0, Math.min(els.length - 1, i));
+    crawlScrollToChapter(els[i]);
+  }
+  function crawlPrev() { crawlGoTo(crawlCurrentIndex() - 1); }
+  function crawlNext() { crawlGoTo(crawlCurrentIndex() + 1); }
+  function archiveIdForDataNum(num) {
+    const el = chapters.find(function (c) { return c.getAttribute("data-num") === num; });
+    return el ? el.id : null;
   }
 
   /* ---- swappable crawl content (intro vs. a single chapter) ---- */
@@ -303,33 +347,40 @@
     if (musicAllowed) playMusic();          // user gesture → playback allowed
     setCrawlFull();                          // full document, continuous crawl
     cr.restAtEnd = true;                     // settle on the footer at the end
-    crawlReturnId = null;
+    cr.pendingChapter = null;                // start from the top
     hide(boot);
     show(crawl);
     window.scrollTo(0, 0);
-    // let layout settle (fonts + height) before measuring
-    requestAnimationFrame(function () { requestAnimationFrame(startCrawl); });
+    startCrawl();   // reading offsetHeight forces the layout we need
   }
   function replayChapterAsCrawl() {
     const ch = getCurrentChapter();
     if (!ch) return;
-    cr.restAtEnd = false;                    // single chapter → return to the archive
-    if (ch.classList.contains("doc-head")) { setCrawlIntro(); crawlReturnId = "doc-top"; }
-    else { setCrawlChapter(ch); crawlReturnId = ch.id; }
-    track("replay_crawl", { chapter: ch.getAttribute("data-num") || "00" });
+    // full document so the reader can keep scrolling into other chapters,
+    // just positioned at the chapter they were on
+    setCrawlFull();
+    cr.restAtEnd = true;
+    cr.pendingChapter = ch.getAttribute("data-num") || "00";
+    track("replay_crawl", { chapter: cr.pendingChapter });
     hide(archive);
     lockBody();
     show(crawl);
     window.scrollTo(0, 0);
-    requestAnimationFrame(function () { requestAnimationFrame(startCrawl); });
+    startCrawl();
   }
   function enterArchive() {
+    // land in the archive at whichever chapter is currently in view in the crawl
+    let target = null;
+    const els = crawlChapterEls();
+    if (els.length) {
+      const cur = els[crawlCurrentIndex()];
+      const id = cur ? archiveIdForDataNum(cur.getAttribute("data-num")) : null;
+      if (id) target = document.getElementById(id);
+    }
     stopCrawl();
     hide(crawl);
     show(archive);
     unlockBody();
-    const target = crawlReturnId ? document.getElementById(crawlReturnId) : null;
-    crawlReturnId = null;
     if (target) target.scrollIntoView();
     else window.scrollTo(0, 0);
     track("archive_opened");
@@ -357,6 +408,11 @@
   if (zOut) zOut.addEventListener("click", function () { zoomBy(-0.15); });
   if (zFit) zFit.addEventListener("click", crawlFit);
 
+  const prevBtn = document.getElementById("cc-prev");
+  const nextBtn = document.getElementById("cc-next");
+  if (prevBtn) prevBtn.addEventListener("click", crawlPrev);
+  if (nextBtn) nextBtn.addEventListener("click", crawlNext);
+
   if (crawl) crawl.addEventListener("wheel", function (e) {
     if (!cr.active) return;
     e.preventDefault();
@@ -378,6 +434,10 @@
         e.preventDefault(); zoomBy(-0.15); break;
       case "f": case "F":
         crawlFit(); break;
+      case "[":
+        e.preventDefault(); crawlPrev(); break;
+      case "]":
+        e.preventDefault(); crawlNext(); break;
       case "Escape":
         enterArchive(); break;
     }
